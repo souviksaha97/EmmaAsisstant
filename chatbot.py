@@ -6,7 +6,6 @@ from io import BytesIO
 from gtts import gTTS
 import random
 import os
-from apixu.client import ApixuClient
 import wikipedia
 import pyaudio
 import wave
@@ -18,7 +17,7 @@ chans = 1 # 1 channel
 samp_rate = 44100 # 44.1kHz sampling rate
 chunk = 4096 # 2^12 samples for buffer
 record_secs = 5 # seconds to record
-dev_index =  2 # device index found by p.get_device_info_by_index(ii)
+dev_index =  2 # device index found by p.get_device_info_by_index(i)
 wav_output_filename = 'test1.wav' # name of .wav file
 
 today = datetime.today()
@@ -28,6 +27,9 @@ def_timezone = 'Asia/Kolkata'
 def_location = 'Mumbai'
 
 am_pm = 'AM'
+
+CONFIDENCE_INDEX = 0.9
+
 month_dict = {'01':'January', '02':'February', '03':'March', '04':'April', '05':'May', '06':'June', '07':'July', '08':'August', '09':'September',
               '10':'October', '11':'November', '12':'December'}
 
@@ -36,7 +38,7 @@ greet_phrases_list = ['Hey! My name is Emma. Nice to meet you! ',
                       'Hello there! Good day to you! I am Emma, your personal Assistant! ',
                       'Howdy! I am your partner Emma. You can call me Em, Emmie or Emily ',
                       'Wassup ', 'Hi! My name is Emma! Happy to be at your service! ']
-unsure_phrases_list = ["I'm not sure what you meant. Please try again. " , "I didn't get you. Can you repear what you said? ", "I think I missed you. Please repeat. "]
+unsure_phrases_list = ["I'm not sure what you meant. Please try again. " , "I didn't get you. Can you repeat what you said? ", "I think I missed you. Please repeat. "]
 
 def get_time():
     #print('time')
@@ -112,19 +114,16 @@ def get_weather():
     print(humidity)
     feelslike = str(forecast['current']['feelslike'])
     print(feelslike)
-##        maxtemp = str(forecast['forecast'][today])#['maxtemp_c'])#[2]['maxtemp_c']
-##        print(maxtemp)
-##        mintemp = str(forecast['forecast']['forecastday'][0]['day']['mintemp_c'])#['mintemp_c']
-##        print(mintemp)
+
     text = forecast['current']['weather_descriptions'][0]
     print(text)
-    sentence = "The weather in " + location + " is , " + " " + text + " with a temperature of " + temp + " degrees celsius and a humidity of " + humidity + "%. It feels like " + feelslike + " degrees celsius."
+    sentence = "The weather in " + location + " is , " + " " + text + " with a temperature of " + temp + " degrees celsius and a humidity of " + humidity + "%. It feels like " + feelslike + " degrees celsius. "
     print(sentence)
     if forecast['current']['temperature'] > 35:
         sentence += "That's so hot! I'll melt my circuits for sure.  "
     elif forecast['current']['temperature'] < 5:
         sentence += "Brrrr! I'll  freeze my circuits short in this cold!  "
-    if "Rain" in text or "rainy" in text:
+    if "Rain" in text or "rainy" in text or "rain" in text:
         sentence += "Don't forget an umbrella! I'm sure you'll need one    ."
     elif "Snow" in text:
         sentence += "You might need a jacket! It could snow in a while!   "
@@ -169,7 +168,7 @@ def get_news():
     print('here')
     sentence = " " 
     try:
-        news_query = client_news.get_top_headlines(sources='the-times-of-india')
+        news_query = client_news.get_top_headlines(country = 'in')
         print('got news')
     except:
         news_query = resp['entities']['location'][0]['resolved']['values'][0]['name']
@@ -178,7 +177,7 @@ def get_news():
         sentence += i['title'] + ". "
 
     print(sentence)
-    search_output = gTTS(sentence, lang = 'en-in')
+    search_output = gTTS(sentence, lang = 'en-gb')
     search_output.save('news.mp3')
     os.system('omxplayer news.mp3')    
 
@@ -190,8 +189,7 @@ def unsure_resp():
 
 
 
-client_wit = Wit('7JWYIELHJSGTXXUJ6KXQTTWMYNS5QN7H')
-client_apixu = '1b189d0184fa9a1b90bb17b03e28ef2a'
+client_wit = Wit('YWFXL2BL6FCUK6F7GA6JTEVNGS5Y2C5A')
 client_news = NewsApiClient(api_key='94813f16596c4a428efdcae000a08756')
 
 
@@ -207,7 +205,7 @@ while True:
     print("recording")
     frames = []
 
-    for ii in range(0,int((samp_rate/chunk)*record_secs)):
+    for i in range(0,int((samp_rate/chunk)*record_secs)):
         data = stream.read(chunk, exception_on_overflow = False)
         frames.append(data)
 
@@ -226,35 +224,64 @@ while True:
     wavefile.writeframes(b''.join(frames))
     wavefile.close()
 
-    with open('test1.wav', 'rb') as f:
+    with open(wav_output_filename, 'rb') as f:
         resp = client_wit.speech(f, None, {'Content-Type': 'audio/wav'})
         
 #    resp = client_wit.message(query)
 
     print(resp)
-    
+ 
+    #try:
+        #task_dict = resp['entities']['intent'][0]
+        ##print(task_dict)
+        ##print(task_dict[0])
+        ##print(task_dict[1])
+        #print(str(task_dict['value']) + " " + str(task_dict['confidence']))
+        #if task_dict['confidence'] >= CONFIDENCE_INDEX:
+            #if task_dict['value'] == 'time':
+                #get_time()
+            #elif task_dict['value'] == 'weather':
+                #get_weather()
+            #elif task_dict['value'] == 'greet':
+                #greet_fn()
+            #elif task_dict['value'] == 'search_get':
+                #search_fn()
+            #elif task_dict['value'] == 'news_get':
+                #get_news()
+        #else:
+            #unsure_resp()
+    #except:
+        #unsure_resp()
+
     try:
-        task_dict = resp['entities']['intent'][0]
-        #print(task_dict)
-        #print(task_dict[0])
-        #print(task_dict[1])
-        print(str(task_dict['value']) + " " + str(task_dict['confidence']))
-        if task_dict['confidence'] >= 0.9:
-            if task_dict['value'] == 'time_get':
-                get_time()
-            elif task_dict['value'] == 'weather_get':
-                get_weather()
-            elif task_dict['value'] == 'greet':
+        task_dict = resp['entities']
+        if "intent" in task_dict:
+            intent_value =  task_dict['intent'][0]['value']
+            intent_confidence = task_dict['intent'][0]['confidence']
+            if intent_confidence >= CONFIDENCE_INDEX:
+                if intent_value == 'time':
+                    print('time')
+                    get_time()
+                elif intent_value == 'weather':
+                    print('weather')
+                    get_weather()
+                elif intent_value == 'news':
+                    print('news')
+                    get_news()
+            else:
+                unsure_resp()
+        elif "greetings" in task_dict:
+            print('greet')
+            if task_dict['greetings'][0]['confidence'] >= CONFIDENCE_INDEX:
                 greet_fn()
-            elif task_dict['value'] == 'search_get':
+        elif "wikipedia_search_query" in task_dict:
+            print('wikipedia_search_query')
+            if task_dict['wikipedia_search_query'][0]['confidence'] >= CONFIDENCE_INDEX:
                 search_fn()
-            elif task_dict['value'] == 'news_get':
-                get_news()
-        else:
-            unsure_resp()
     except:
         unsure_resp()
-
+            
+            
 
 
 
