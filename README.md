@@ -7,9 +7,11 @@ Added new API key
 Integrated new API parameters  
 
 ## 11/04/2020  
-Resolved issue related to AM/PM
-
+Resolved issue related to AM/PM  
+Downloaded URL for web image  
 
 ## List of changes to do  
 Max, min temperature  
 Different kinds of news reporting  
+Integrate OLED screen with Assistant  
+

@@ -97,9 +97,7 @@ def get_weather():
         location = def_location
 
     print(location)
-    print("Clear")
-##    try:
-##        forecast = client_apixu.forecast(q= location)
+
     base_url=base_url+location
     buffer = BytesIO()
     c = pycurl.Curl()
@@ -116,7 +114,8 @@ def get_weather():
     print(humidity)
     feelslike = str(forecast['current']['feelslike'])
     print(feelslike)
-
+    img_url = forecast['current']['weather_icons'][0]
+    print(img_url)
     text = forecast['current']['weather_descriptions'][0]
     print(text)
     sentence = "The weather in " + location + " is , " + " " + text + " with a temperature of " + temp + " degrees celsius and a humidity of " + humidity + "%. It feels like " + feelslike + " degrees celsius. "
@@ -233,27 +232,7 @@ while True:
 
     print(resp)
  
-    #try:
-        #task_dict = resp['entities']['intent'][0]
-        ##print(task_dict)
-        ##print(task_dict[0])
-        ##print(task_dict[1])
-        #print(str(task_dict['value']) + " " + str(task_dict['confidence']))
-        #if task_dict['confidence'] >= CONFIDENCE_INDEX:
-            #if task_dict['value'] == 'time':
-                #get_time()
-            #elif task_dict['value'] == 'weather':
-                #get_weather()
-            #elif task_dict['value'] == 'greet':
-                #greet_fn()
-            #elif task_dict['value'] == 'search_get':
-                #search_fn()
-            #elif task_dict['value'] == 'news_get':
-                #get_news()
-        #else:
-            #unsure_resp()
-    #except:
-        #unsure_resp()
+
 
     try:
         task_dict = resp['entities']
