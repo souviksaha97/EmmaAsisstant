@@ -73,8 +73,10 @@ def get_time():
     if (int(time_list[0]) > 12):
         time_list[0] = str(int(time_list[0]) - 12);
         am_pm = 'PM'
-    else:
+    elif (int(time_list[0]) < 12):
         am_pm = 'AM'
+    else:
+        am_pm = 'PM'
 
     
     rand_seq = random.randint(0,len(time_phrases_list)-1)

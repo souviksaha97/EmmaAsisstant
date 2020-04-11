@@ -6,6 +6,9 @@ Emma is a personal Assistant who loves to help! She can tell you the weather, th
 Added new API key  
 Integrated new API parameters  
 
+## 11/04/2020  
+Resolved issue related to AM/PM
+
 
 ## List of changes to do  
 Max, min temperature  
