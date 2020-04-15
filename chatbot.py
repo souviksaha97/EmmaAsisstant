@@ -189,7 +189,11 @@ def unsure_resp():
     os.system('omxplayer unsure.mp3')
 
 
-
+def music_player():
+    os.system('mpc play 1')
+    input('Press a button to stop')
+    os.system('mpc stop')
+    
 client_wit = Wit('YWFXL2BL6FCUK6F7GA6JTEVNGS5Y2C5A')
 client_news = NewsApiClient(api_key='94813f16596c4a428efdcae000a08756')
 
@@ -249,6 +253,9 @@ while True:
                 elif intent_value == 'news':
                     print('news')
                     get_news()
+                elif intent_value == 'music':
+                    print('music')
+                    music_player()
             else:
                 unsure_resp()
         elif "greetings" in task_dict:
