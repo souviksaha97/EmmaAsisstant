@@ -15,6 +15,10 @@ Emma is a personal Assistant who loves to help! She can tell you the weather, th
 * Added internet radio playback, using mpd  
 * Formatted the README.md
 
+## 18/04/2020  
+* Added youtube player(pafy), vlc player to play audio stream  
+* Added ding and dong sounds
+
 ---
 
 ## List of changes to do  
