@@ -11,6 +11,11 @@ import pyaudio
 import wave
 from newsapi import NewsApiClient
 from datetime import datetime
+import pandas as pd
+import keyboard
+import vlc
+import pafy
+import time
 
 form_1 = pyaudio.paInt16 # 16-bit resolution
 chans = 1 # 1 channel
@@ -30,6 +35,16 @@ am_pm = 'AM'
 
 CONFIDENCE_INDEX = 0.9
 
+WIT_API = 'YWFXL2BL6FCUK6F7GA6JTEVNGS5Y2C5A'
+NEWSCLI_API = '94813f16596c4a428efdcae000a08756'
+YOUTUBE_API = 'AIzaSyBwRy6ThkIQrDOmh6XTgbGItFCeWHdpOEo'
+
+PLAYLIST_URL = 'https://www.youtube.com/playlist?list=PLFepKcct_CJG0mu-nb-HvQ52FRKTEO6hT'
+WEATHER_URL = 'http://api.weatherstack.com/current?access_key=1b189d0184fa9a1b90bb17b03e28ef2a&query='
+TIME_URL = 'http://worldtimeapi.org/api/timezone/'
+
+DELAY = 2
+
 month_dict = {'01':'January', '02':'February', '03':'March', '04':'April', '05':'May', '06':'June', '07':'July', '08':'August', '09':'September',
               '10':'October', '11':'November', '12':'December'}
 
@@ -42,7 +57,7 @@ unsure_phrases_list = ["I'm not sure what you meant. Please try again. " , "I di
 
 def get_time():
     #print('time')
-    base_url = 'http://worldtimeapi.org/api/timezone/'
+    base_url = TIME_URL
     #print(resp)
     try:
         timezone = resp['entities']['location'][0]['resolved']['values'][0]['timezone']
@@ -90,7 +105,7 @@ def get_time():
     print(timezone)
     
 def get_weather():
-    base_url = 'http://api.weatherstack.com/current?access_key=1b189d0184fa9a1b90bb17b03e28ef2a&query='
+    base_url = WEATHER_URL
     try:
         location = resp['entities']['location'][0]['resolved']['values'][0]['name']
     except:
@@ -177,10 +192,10 @@ def get_news():
     for i in news_query['articles']:
         sentence += i['title'] + ". "
 
-    print(sentence)
+    #print(sentence)
     search_output = gTTS(sentence, lang = 'en-gb')
     search_output.save('news.mp3')
-    os.system('omxplayer news.mp3')    
+    #os.system('omxplayer news.mp3')    
 
 def unsure_resp():
     rand_seq = random.randint(0, len(unsure_phrases_list)-1)
@@ -189,17 +204,40 @@ def unsure_resp():
     os.system('omxplayer unsure.mp3')
 
 
-
-client_wit = Wit('YWFXL2BL6FCUK6F7GA6JTEVNGS5Y2C5A')
-client_news = NewsApiClient(api_key='94813f16596c4a428efdcae000a08756')
-
+def music_player():
+    for i in url_list:
+        x=random.randint(0,440)
+        video=pafy.new(url_list[x])
+        x=video.getbestaudio()
+        print(video.title)
+        vlcInstance = vlc.Instance()
+        player = vlcInstance.media_player_new()
+        player.set_mrl(x.url)
+        player.play()
+        time.sleep(video.length+DELAY)
+    
+    
+client_wit = Wit(WIT_API)
+print('Connected to wit client')
+client_news = NewsApiClient(api_key=NEWSCLI_API)
+print('Connected to news client')
+pafy.set_api_key(YOUTUBE_API)
+playlist = pafy.get_playlist2(PLAYLIST_URL)
+url_list=[]
+for i in playlist:
+    pl_list=str(i).split()
+    url_list.append(pl_list[2])
+print('Retrieved ' + str(len(url_list)) + ' songs from playlist')
 
 print()
 while True:
 
 #    query = input('Enter a query')
     audio = pyaudio.PyAudio()
-    input('Press a button to start listening')
+    exit_check = input('Press a button to start listening')
+    os.system('omxplayer ding.wav')
+    if exit_check.upper() == 'EXIT':
+        sys.exit()
     stream = audio.open(format = form_1,rate = samp_rate,channels = chans, \
                     input_device_index = dev_index,input = True, \
                     frames_per_buffer=chunk)
@@ -210,6 +248,7 @@ while True:
         data = stream.read(chunk, exception_on_overflow = False)
         frames.append(data)
 
+    os.system('omxplayer dong.wav')
     print("finished recording")
 
     # stop the stream, close it, and terminate the pyaudio instantiation
@@ -249,6 +288,9 @@ while True:
                 elif intent_value == 'news':
                     print('news')
                     get_news()
+                elif intent_value == 'music':
+                    print('music')
+                    music_player()
             else:
                 unsure_resp()
         elif "greetings" in task_dict:
