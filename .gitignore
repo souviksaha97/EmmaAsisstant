@@ -132,3 +132,6 @@ dmypy.json
 .wav
 *.wav
 *.mp3
+
+
+config.py

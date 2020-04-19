@@ -19,6 +19,9 @@ Emma is a personal Assistant who loves to help! She can tell you the weather, th
 * Added youtube player(pafy), vlc player to play audio stream  
 * Added ding and dong sounds
 
+## 19/04/2020  
+* Added config.py to hide API keys  
+
 ---
 
 ## List of changes to do  
