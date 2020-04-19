@@ -2,7 +2,8 @@ import vlc
 import pafy
 import random
 import time
-pafy.set_api_key('AIzaSyBwRy6ThkIQrDOmh6XTgbGItFCeWHdpOEo')
+from config import *
+pafy.set_api_key(YOUTUBE_API)
 plurl = 'https://www.youtube.com/playlist?list=PLFepKcct_CJG0mu-nb-HvQ52FRKTEO6hT'
 playlist = pafy.get_playlist2(plurl)
 url_list=[]
