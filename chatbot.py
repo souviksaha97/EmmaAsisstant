@@ -16,6 +16,11 @@ import keyboard
 import vlc
 import pafy
 import time
+import board
+import digitalio
+from PIL import Image, ImageDraw, ImageFont
+import adafruit_ssd1306
+from config import *
 
 form_1 = pyaudio.paInt16 # 16-bit resolution
 chans = 1 # 1 channel
@@ -34,10 +39,6 @@ def_location = 'Mumbai'
 am_pm = 'AM'
 
 CONFIDENCE_INDEX = 0.9
-
-WIT_API = 'YWFXL2BL6FCUK6F7GA6JTEVNGS5Y2C5A'
-NEWSCLI_API = '94813f16596c4a428efdcae000a08756'
-YOUTUBE_API = 'AIzaSyBwRy6ThkIQrDOmh6XTgbGItFCeWHdpOEo'
 
 PLAYLIST_URL = 'https://www.youtube.com/playlist?list=PLFepKcct_CJG0mu-nb-HvQ52FRKTEO6hT'
 WEATHER_URL = 'http://api.weatherstack.com/current?access_key=1b189d0184fa9a1b90bb17b03e28ef2a&query='
@@ -210,6 +211,23 @@ def music_player():
         video=pafy.new(url_list[x])
         x=video.getbestaudio()
         print(video.title)
+        print(video.author)
+        vid_split = video.title.split('-')
+        if vid_split[0] > vid_split[1]:
+            text = vid_split[0]
+        else:
+            text = vid_split[1]
+        oled.fill(0)
+        oled.show()
+        draw.rectangle((0, 0, oled.width, oled.height),
+                   outline=0, fill=0)
+
+        draw.text((-10,0), text, font=font, fill=255)
+
+        # Display image
+        oled.image(image)
+        oled.show()
+
         vlcInstance = vlc.Instance()
         player = vlcInstance.media_player_new()
         player.set_mrl(x.url)
@@ -221,6 +239,21 @@ client_wit = Wit(WIT_API)
 print('Connected to wit client')
 client_news = NewsApiClient(api_key=NEWSCLI_API)
 print('Connected to news client')
+# Define the Reset Pin
+oled_reset = digitalio.DigitalInOut(board.D4)
+
+# Change these
+# to the right size for your display!
+WIDTH = 128
+HEIGHT = 64
+# Change to 64 if needed
+BORDER = 5
+
+# Use for I2C.
+i2c = board.I2C()
+oled = adafruit_ssd1306.SSD1306_I2C(WIDTH, HEIGHT, i2c, addr=0x3c, reset=oled_reset)
+oled.fill(0)
+oled.show()
 pafy.set_api_key(YOUTUBE_API)
 playlist = pafy.get_playlist2(PLAYLIST_URL)
 url_list=[]
@@ -228,6 +261,15 @@ for i in playlist:
     pl_list=str(i).split()
     url_list.append(pl_list[2])
 print('Retrieved ' + str(len(url_list)) + ' songs from playlist')
+
+image = Image.new('1', (oled.width, oled.height))
+
+# Get drawing object to draw on image.
+draw = ImageDraw.Draw(image)
+
+# Load default font.
+font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 14)
+
 
 print()
 while True:
