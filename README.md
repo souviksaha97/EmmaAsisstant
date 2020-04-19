@@ -21,6 +21,7 @@ Emma is a personal Assistant who loves to help! She can tell you the weather, th
 
 ## 19/04/2020  
 * Added config.py to hide API keys  
+* Integrated OLED to display current song name, artist and percentage complete  
 
 ---
 
