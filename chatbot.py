@@ -35,9 +35,9 @@ am_pm = 'AM'
 
 CONFIDENCE_INDEX = 0.9
 
-WIT_API = '####'
-NEWSCLI_API = '####'
-YOUTUBE_API = '####'
+WIT_API = 'YWFXL2BL6FCUK6F7GA6JTEVNGS5Y2C5A'
+NEWSCLI_API = '94813f16596c4a428efdcae000a08756'
+YOUTUBE_API = 'AIzaSyBwRy6ThkIQrDOmh6XTgbGItFCeWHdpOEo'
 
 PLAYLIST_URL = 'https://www.youtube.com/playlist?list=PLFepKcct_CJG0mu-nb-HvQ52FRKTEO6hT'
 WEATHER_URL = 'http://api.weatherstack.com/current?access_key=1b189d0184fa9a1b90bb17b03e28ef2a&query='
