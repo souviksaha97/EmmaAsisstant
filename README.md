@@ -23,6 +23,12 @@ Emma is a personal Assistant who loves to help! She can tell you the weather, th
 * Added config.py to hide API keys  
 * Integrated OLED to display current song name, artist and percentage complete  
 
+## 20/04/2020  
+* Pulled weather image and displayed on OLED  
+
+## 22/04/2020  
+* Added progress bar to the music player screen  
+
 ---
 
 ## List of changes to do  
@@ -31,3 +37,7 @@ Emma is a personal Assistant who loves to help! She can tell you the weather, th
 * Different kinds of news reporting  
 * Integrate OLED screen with Assistant  
 
+---
+
+## List of things done  
+* Integrate OLED screen with Assistant

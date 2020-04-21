@@ -12,6 +12,7 @@ import wave
 from newsapi import NewsApiClient
 from datetime import datetime
 import pandas as pd
+import numpy as np
 import keyboard
 import vlc
 import pafy
@@ -40,9 +41,9 @@ am_pm = 'AM'
 
 CONFIDENCE_INDEX = 0.9
 
-FONT_SIZE_LARGE = 24
-FONT_SIZE_MEDIUM = 20
-FONT_SIZE_SMALL = 18
+FONT_SIZE_LARGE = 22
+FONT_SIZE_MEDIUM = 18
+FONT_SIZE_SMALL = 16
 
 PLAYLIST_URL = 'https://www.youtube.com/playlist?list=PLFepKcct_CJG0mu-nb-HvQ52FRKTEO6hT'
 WEATHER_URL = 'http://api.weatherstack.com/current?access_key=1b189d0184fa9a1b90bb17b03e28ef2a&query='
@@ -140,6 +141,23 @@ def get_weather():
     print(text)
     sentence = "The weather in " + location + " is , " + " " + text + " with a temperature of " + temp + " degrees celsius and a humidity of " + humidity + "%. It feels like " + feelslike + " degrees celsius. "
     print(sentence)
+
+    buffer = BytesIO()
+    c = pycurl.Curl()
+    c.setopt(c.URL, img_url)
+    c.setopt(c.WRITEDATA, buffer)
+    c.perform()
+    c.close()
+    draw.rectangle((0, 0, oled.width, oled.height),
+                           outline=0, fill=0)
+    image = (
+        Image.open(buffer)
+        .resize((oled.width, oled.height), Image.BICUBIC)
+        .convert("1")
+    )
+    oled.image(image)
+    oled.show()
+    
     if forecast['current']['temperature'] > 35:
         sentence += "That's so hot! I'll melt my circuits for sure.  "
     elif forecast['current']['temperature'] < 5:
@@ -219,6 +237,7 @@ def music_player():
         x=video.getbestaudio()
         print(video.title)
         print(video.author)
+        print(x.bitrate, x.extension)
         songStringList=video.title.split(' - ')
         if len(songStringList)==2:
             songName=songStringList[1]
@@ -245,13 +264,15 @@ def music_player():
         
         while time.time()-songStart < video.length+DELAY:
             for x in range(0, max_width+oled.width):
-                songPercent=int(((time.time()-songStart)/video.length)*100)
+##                songPercent=int(((time.time()-songStart)/video.length)*100)
+                songPercent=(time.time()-songStart)/video.length
                 draw.rectangle((0, 0, oled.width, oled.height),
                            outline=0, fill=0)
                 draw.text((oled.width-x,oled.height//2 - name_height//2 - 20),songName,font=font_l,fill=255)
-                draw.text((oled.width+name_width//2-artist_width//2-x,oled.height//2 - 7),
+                draw.text((oled.width+name_width//2-artist_width//2-x,oled.height//2 - 5),
                           songArtist,font=font_m,fill=255)
-                draw.text((oled.width//2 - 7, oled.height//2 + 12),str(songPercent),font=font_s,fill=255)
+##                draw.text((oled.width//2, oled.height//2 + 12),str(songPercent),font=font_s,fill=255)
+                draw.rectangle((5, oled.height - 15, int((oled.width-5)*songPercent), oled.height-5), outline=0, fill=255)
                 oled.image(image)
                 oled.show()
                 time.sleep(0.01667)
