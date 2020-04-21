@@ -12,6 +12,7 @@ import wave
 from newsapi import NewsApiClient
 from datetime import datetime
 import pandas as pd
+import numpy as np
 import keyboard
 import vlc
 import pafy
@@ -39,6 +40,10 @@ def_location = 'Mumbai'
 am_pm = 'AM'
 
 CONFIDENCE_INDEX = 0.9
+
+FONT_SIZE_LARGE = 22
+FONT_SIZE_MEDIUM = 18
+FONT_SIZE_SMALL = 16
 
 PLAYLIST_URL = 'https://www.youtube.com/playlist?list=PLFepKcct_CJG0mu-nb-HvQ52FRKTEO6hT'
 WEATHER_URL = 'http://api.weatherstack.com/current?access_key=1b189d0184fa9a1b90bb17b03e28ef2a&query='
@@ -136,6 +141,23 @@ def get_weather():
     print(text)
     sentence = "The weather in " + location + " is , " + " " + text + " with a temperature of " + temp + " degrees celsius and a humidity of " + humidity + "%. It feels like " + feelslike + " degrees celsius. "
     print(sentence)
+
+    buffer = BytesIO()
+    c = pycurl.Curl()
+    c.setopt(c.URL, img_url)
+    c.setopt(c.WRITEDATA, buffer)
+    c.perform()
+    c.close()
+    draw.rectangle((0, 0, oled.width, oled.height),
+                           outline=0, fill=0)
+    image = (
+        Image.open(buffer)
+        .resize((oled.width, oled.height), Image.BICUBIC)
+        .convert("1")
+    )
+    oled.image(image)
+    oled.show()
+    
     if forecast['current']['temperature'] > 35:
         sentence += "That's so hot! I'll melt my circuits for sure.  "
     elif forecast['current']['temperature'] < 5:
@@ -206,33 +228,60 @@ def unsure_resp():
 
 
 def music_player():
+    random.shuffle(url_list)
+    vlcInstance = vlc.Instance()
+    player = vlcInstance.media_player_new()
     for i in url_list:
-        x=random.randint(0,440)
-        video=pafy.new(url_list[x])
+        
+        video=pafy.new(i)
         x=video.getbestaudio()
         print(video.title)
         print(video.author)
-        vid_split = video.title.split('-')
-        if vid_split[0] > vid_split[1]:
-            text = vid_split[0]
+        print(x.bitrate, x.extension)
+        songStringList=video.title.split(' - ')
+        if len(songStringList)==2:
+            songName=songStringList[1]
+            songArtist=songStringList[0]
         else:
-            text = vid_split[1]
-        oled.fill(0)
-        oled.show()
-        draw.rectangle((0, 0, oled.width, oled.height),
-                   outline=0, fill=0)
-
-        draw.text((-10,0), text, font=font, fill=255)
-
+            songName=video.title
+            songArtist=video.author
         # Display image
         oled.image(image)
         oled.show()
-
-        vlcInstance = vlc.Instance()
-        player = vlcInstance.media_player_new()
+        songStart=time.time()
+        
         player.set_mrl(x.url)
         player.play()
-        time.sleep(video.length+DELAY)
+        songPercent = 0
+        (name_width, name_height) = font_l.getsize(songName)
+        (artist_width, artist_height) = font_m.getsize(songArtist)
+        max_width = 0
+        if name_width > artist_width:
+            max_width = name_width
+        else:
+            max_width = artist_width
+        print(video.length, x.url)
+        
+        while time.time()-songStart < video.length+DELAY:
+            for x in range(0, max_width+oled.width):
+##                songPercent=int(((time.time()-songStart)/video.length)*100)
+                songPercent=(time.time()-songStart)/video.length
+                draw.rectangle((0, 0, oled.width, oled.height),
+                           outline=0, fill=0)
+                draw.text((oled.width-x,oled.height//2 - name_height//2 - 20),songName,font=font_l,fill=255)
+                draw.text((oled.width+name_width//2-artist_width//2-x,oled.height//2 - 5),
+                          songArtist,font=font_m,fill=255)
+##                draw.text((oled.width//2, oled.height//2 + 12),str(songPercent),font=font_s,fill=255)
+                draw.rectangle((5, oled.height - 15, int((oled.width-5)*songPercent), oled.height-5), outline=0, fill=255)
+                oled.image(image)
+                oled.show()
+                time.sleep(0.01667)
+                
+
+                if time.time()-songStart > video.length+DELAY:
+                    break
+        player.stop()
+##                print(time.time()-songStart)
     
     
 client_wit = Wit(WIT_API)
@@ -246,8 +295,6 @@ oled_reset = digitalio.DigitalInOut(board.D4)
 # to the right size for your display!
 WIDTH = 128
 HEIGHT = 64
-# Change to 64 if needed
-BORDER = 5
 
 # Use for I2C.
 i2c = board.I2C()
@@ -268,13 +315,12 @@ image = Image.new('1', (oled.width, oled.height))
 draw = ImageDraw.Draw(image)
 
 # Load default font.
-font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 14)
-
-
-print()
+font_l = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", FONT_SIZE_LARGE)
+font_s = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", FONT_SIZE_SMALL)
+font_m = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", FONT_SIZE_MEDIUM)
+os.system("omxplayer startup.wav")
 while True:
 
-#    query = input('Enter a query')
     audio = pyaudio.PyAudio()
     exit_check = input('Press a button to start listening')
     os.system('omxplayer ding.wav')
@@ -309,7 +355,6 @@ while True:
     with open(wav_output_filename, 'rb') as f:
         resp = client_wit.speech(f, None, {'Content-Type': 'audio/wav'})
         
-#    resp = client_wit.message(query)
 
     print(resp)
  
