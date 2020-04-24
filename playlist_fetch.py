@@ -3,14 +3,14 @@ import pafy
 import random
 import time
 from config import *
-pafy.set_api_key(YOUTUBE_API)
-plurl = 'https://www.youtube.com/playlist?list=PLFepKcct_CJG0mu-nb-HvQ52FRKTEO6hT'
-playlist = pafy.get_playlist2(plurl)
-url_list=[]
-for i in playlist:
-    pl_list=str(i).split()
-    url_list.append(pl_list[2])
-print(url_list)
+##pafy.set_api_key(YOUTUBE_API)
+##plurl = 'https://www.youtube.com/playlist?list=PLFepKcct_CJG0mu-nb-HvQ52FRKTEO6hT'
+##playlist = pafy.get_playlist2(plurl)
+##url_list=[]
+##for i in playlist:
+##    pl_list=str(i).split()
+##    url_list.append(pl_list[2])
+##print(url_list)
 
 ##for i in url_list:
 ##    x=random.randint(0,440)
@@ -26,7 +26,7 @@ print(url_list)
 ##
 ##
 
-video=pafy.new('rt7988RVMsU')
+video=pafy.new('k2qgadSvNyU')
 x=video.getbestaudio()
 print(x)
 vlcInstance = vlc.Instance()
