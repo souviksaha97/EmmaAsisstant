@@ -29,6 +29,9 @@ Emma is a personal Assistant who loves to help! She can tell you the weather, th
 ## 22/04/2020  
 * Added progress bar to the music player screen  
 
+## 24/04/2020  
+* Cleared youtube-dl cache before each run  
+
 ---
 
 ## List of changes to do  

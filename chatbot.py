@@ -22,6 +22,7 @@ import digitalio
 from PIL import Image, ImageDraw, ImageFont
 import adafruit_ssd1306
 from config import *
+import youtube_dl
 
 form_1 = pyaudio.paInt16 # 16-bit resolution
 chans = 1 # 1 channel
@@ -282,7 +283,9 @@ def music_player():
                     break
         player.stop()
 ##                print(time.time()-songStart)
-    
+
+with youtube_dl.YoutubeDL({}) as ydl:
+    ydl.cache.remove()
     
 client_wit = Wit(WIT_API)
 print('Connected to wit client')
