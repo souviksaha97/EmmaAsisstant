@@ -1,19 +1,16 @@
 from wit import Wit
-import sys
 import json
 import pycurl
+import os
 from io import BytesIO
 from gtts import gTTS
 import random
-import os
 import wikipedia
 import pyaudio
 import wave
 from newsapi import NewsApiClient
 from datetime import datetime
-import pandas as pd
 import numpy as np
-import keyboard
 import vlc
 import pafy
 import time
@@ -23,6 +20,7 @@ from PIL import Image, ImageDraw, ImageFont
 import adafruit_ssd1306
 from config import *
 import youtube_dl
+from gpiozero import Button
 
 form_1 = pyaudio.paInt16 # 16-bit resolution
 chans = 1 # 1 channel
@@ -61,6 +59,80 @@ greet_phrases_list = ['Hey! My name is Emma. Nice to meet you! ',
                       'Howdy! I am your partner Emma. You can call me Em, Emmie or Emily ',
                       'Wassup ', 'Hi! My name is Emma! Happy to be at your service! ']
 unsure_phrases_list = ["I'm not sure what you meant. Please try again. " , "I didn't get you. Can you repeat what you said? ", "I think I missed you. Please repeat. "]
+
+def query_function():
+
+    audio = pyaudio.PyAudio();
+    os.system("omxplayer startup.wav")
+##    exit_check = input('Press a button to start listening')
+    PPbutton.wait_for_press()
+    os.system("omxplayer ding.wav")
+    stream = audio.open(format = form_1,rate = samp_rate,channels = chans, \
+                    input_device_index = dev_index,input = True, \
+                    frames_per_buffer=chunk)
+    print("recording")
+    frames = []
+
+    for i in range(0,int((samp_rate/chunk)*record_secs)):
+        data = stream.read(chunk, exception_on_overflow = False)
+        frames.append(data)
+
+    print("finished recording")
+
+    # stop the stream, close it, and terminate the pyaudio instantiation
+    stream.stop_stream()
+    stream.close()
+    audio.terminate()
+
+    # save the audio frames as .wav file
+    wavefile = wave.open(wav_output_filename,'wb')
+    wavefile.setnchannels(chans)
+    wavefile.setsampwidth(audio.get_sample_size(form_1))
+    wavefile.setframerate(samp_rate)
+    wavefile.writeframes(b''.join(frames))
+    wavefile.close()
+    
+    os.system("omxplayer dong.wav")
+
+    with open(wav_output_filename, 'rb') as f:
+        resp = client_wit.speech(f, None, {'Content-Type': 'audio/wav'})
+        
+
+    print(resp)
+ 
+    
+
+
+    task_dict = resp['entities']
+    if "intent" in task_dict:
+        intent_value =  task_dict['intent'][0]['value']
+        intent_confidence = task_dict['intent'][0]['confidence']
+        if intent_confidence >= CONFIDENCE_INDEX:
+            if intent_value == 'time':
+                print('time')
+                get_time()
+            elif intent_value == 'weather':
+                print('weather')
+                get_weather()
+            elif intent_value == 'news':
+                print('news')
+                get_news()
+            elif intent_value == 'music':
+                print('music')
+                music_player()
+        else:
+            unsure_resp()
+    elif "greetings" in task_dict:
+        print('greet')
+        if task_dict['greetings'][0]['confidence'] >= CONFIDENCE_INDEX:
+            greet_fn()
+    elif "wikipedia_search_query" in task_dict:
+        print('wikipedia_search_query')
+        if task_dict['wikipedia_search_query'][0]['confidence'] >= CONFIDENCE_INDEX:
+            search_fn()
+
+
+
 
 def get_time():
     #print('time')
@@ -108,8 +180,9 @@ def get_time():
     print(sentence)
     time_output = gTTS(sentence, lang = 'en-gb')
     time_output.save('time.mp3')
-    os.system('omxplayer time.mp3')
+    os.system("omxplayer time.mp3")
     print(timezone)
+    query_function()
     
 def get_weather():
     base_url = WEATHER_URL
@@ -176,13 +249,14 @@ def get_weather():
     
     weather_output = gTTS(sentence, lang = 'en-gb')
     weather_output.save('weather.mp3')
-    os.system('omxplayer weather.mp3')
+    os.system("omxplayer weather.mp3")
+    query_function()
 
 def greet_fn():
     rand_seq = random.randint(0, len(greet_phrases_list)-1)
     greet_output = gTTS(greet_phrases_list[rand_seq], lang = 'en-gb')
-    greet_output.save('greet.mp3')
-    os.system('omxplayer greet.mp3')
+    os.system("omxplayer greet.mp3")
+    query_function()
 
 def search_fn():
     try:
@@ -201,7 +275,8 @@ def search_fn():
     print(sentence)                
     search_output = gTTS(sentence, lang = 'en-gb')
     search_output.save('search.mp3')
-    os.system('omxplayer search.mp3')
+    os.system("omxplayer search.mp3")
+    query_function()
     
 
 def get_news():
@@ -219,23 +294,29 @@ def get_news():
     #print(sentence)
     search_output = gTTS(sentence, lang = 'en-gb')
     search_output.save('news.mp3')
-    #os.system('omxplayer news.mp3')    
+    os.system("omxplayer news.mp3")
+    query_function()
 
 def unsure_resp():
     rand_seq = random.randint(0, len(unsure_phrases_list)-1)
+    print('unsure')
     unsure_output = gTTS(unsure_phrases_list[rand_seq], lang = 'en-gb')
     unsure_output.save('unsure.mp3')
-    os.system('omxplayer unsure.mp3')
+    os.system("omxplayer unsure.mp3")
+    query_function()
 
 
 def music_player():
     random.shuffle(url_list)
-    vlcInstance = vlc.Instance()
-    player = vlcInstance.media_player_new()
+    exitFlag = 0
     for i in url_list:
-        
-        video=pafy.new(i)
-        x=video.getbestaudio()
+        fastFwdFlag = 0
+        try:
+            video=pafy.new(i)
+            x=video.getbestaudio()
+        except:
+            print(i)
+            continue
         print(video.title)
         print(video.author)
         print(x.bitrate, x.extension)
@@ -262,7 +343,7 @@ def music_player():
         else:
             max_width = artist_width
         print(video.length, x.url)
-        
+        pausePlayButton = 0
         while time.time()-songStart < video.length+DELAY:
             for x in range(0, max_width+oled.width):
 ##                songPercent=int(((time.time()-songStart)/video.length)*100)
@@ -277,122 +358,90 @@ def music_player():
                 oled.image(image)
                 oled.show()
                 time.sleep(0.01667)
-                
-
+                if PPbutton.is_pressed:
+                    print('pause')
+                    player.pause()
+                    time.sleep(0.2)
+                    PPbutton.wait_for_press()
+                    print('play')
+                    player.play()
+                    time.sleep(0.2)
+                if Stopbutton.is_pressed:
+                    print('stop')
+                    exitFlag = 1
+                    player.stop()
+                    break
+                if FFbutton.is_pressed:
+                    print('ff')
+                    fastFwdFlag = 1
+                    time.sleep(0.2)
+                    break
                 if time.time()-songStart > video.length+DELAY:
                     break
-        player.stop()
+
+            if fastFwdFlag == 1:
+                print('ff')
+                player.stop()
+                break
+            if exitFlag == 1:
+                player.stop()
+                break
+            
+        if exitFlag == 1:
+            player.stop()
+            break
+
+    if exitFlag == 1:
+        query_function()
+                
+##        player.stop()
 ##                print(time.time()-songStart)
-
-with youtube_dl.YoutubeDL({}) as ydl:
-    ydl.cache.remove()
+if __name__ == "__main__":
+    with youtube_dl.YoutubeDL({}) as ydl:
+        ydl.cache.remove()
     
-client_wit = Wit(WIT_API)
-print('Connected to wit client')
-client_news = NewsApiClient(api_key=NEWSCLI_API)
-print('Connected to news client')
-# Define the Reset Pin
-oled_reset = digitalio.DigitalInOut(board.D4)
+    client_wit = Wit(WIT_API)
+    print('Connected to wit client')
+    client_news = NewsApiClient(api_key=NEWSCLI_API)
+    print('Connected to news client')
+    # Define the Reset Pin
+    oled_reset = digitalio.DigitalInOut(board.D4)
+    PPbutton = Button(4)
+    FFbutton = Button(14)
+    Stopbutton = Button(15)
+    # Change these
+    # to the right size for your display!
+    WIDTH = 128
+    HEIGHT = 64
 
-# Change these
-# to the right size for your display!
-WIDTH = 128
-HEIGHT = 64
+    # Use for I2C.
+    i2c = board.I2C()
+    oled = adafruit_ssd1306.SSD1306_I2C(WIDTH, HEIGHT, i2c, addr=0x3c, reset=oled_reset)
+    oled.fill(0)
+    oled.show()
+    pafy.set_api_key(YOUTUBE_API)
+    playlist = pafy.get_playlist2(PLAYLIST_URL)
+    url_list=[]
+    for i in playlist:
+        pl_list=str(i).split()
+        url_list.append(pl_list[2])
+    print('Retrieved ' + str(len(url_list)) + ' songs from playlist')
 
-# Use for I2C.
-i2c = board.I2C()
-oled = adafruit_ssd1306.SSD1306_I2C(WIDTH, HEIGHT, i2c, addr=0x3c, reset=oled_reset)
-oled.fill(0)
-oled.show()
-pafy.set_api_key(YOUTUBE_API)
-playlist = pafy.get_playlist2(PLAYLIST_URL)
-url_list=[]
-for i in playlist:
-    pl_list=str(i).split()
-    url_list.append(pl_list[2])
-print('Retrieved ' + str(len(url_list)) + ' songs from playlist')
+    image = Image.new('1', (oled.width, oled.height))
 
-image = Image.new('1', (oled.width, oled.height))
+    # Get drawing object to draw on image.
+    draw = ImageDraw.Draw(image)
 
-# Get drawing object to draw on image.
-draw = ImageDraw.Draw(image)
+    # Load default font.
+    font_l = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", FONT_SIZE_LARGE)
+    font_s = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", FONT_SIZE_SMALL)
+    font_m = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", FONT_SIZE_MEDIUM)
 
-# Load default font.
-font_l = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", FONT_SIZE_LARGE)
-font_s = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", FONT_SIZE_SMALL)
-font_m = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", FONT_SIZE_MEDIUM)
-os.system("omxplayer startup.wav")
-while True:
+    vlcInstance = vlc.Instance()
+    player = vlcInstance.media_player_new()
+    player.stop()
+    query_function()
 
-    audio = pyaudio.PyAudio()
-    exit_check = input('Press a button to start listening')
-    os.system('omxplayer ding.wav')
-    if exit_check.upper() == 'EXIT':
-        sys.exit()
-    stream = audio.open(format = form_1,rate = samp_rate,channels = chans, \
-                    input_device_index = dev_index,input = True, \
-                    frames_per_buffer=chunk)
-    print("recording")
-    frames = []
-
-    for i in range(0,int((samp_rate/chunk)*record_secs)):
-        data = stream.read(chunk, exception_on_overflow = False)
-        frames.append(data)
-
-    os.system('omxplayer dong.wav')
-    print("finished recording")
-
-    # stop the stream, close it, and terminate the pyaudio instantiation
-    stream.stop_stream()
-    stream.close()
-    audio.terminate()
-
-    # save the audio frames as .wav file
-    wavefile = wave.open(wav_output_filename,'wb')
-    wavefile.setnchannels(chans)
-    wavefile.setsampwidth(audio.get_sample_size(form_1))
-    wavefile.setframerate(samp_rate)
-    wavefile.writeframes(b''.join(frames))
-    wavefile.close()
-
-    with open(wav_output_filename, 'rb') as f:
-        resp = client_wit.speech(f, None, {'Content-Type': 'audio/wav'})
-        
-
-    print(resp)
- 
-
-
-    try:
-        task_dict = resp['entities']
-        if "intent" in task_dict:
-            intent_value =  task_dict['intent'][0]['value']
-            intent_confidence = task_dict['intent'][0]['confidence']
-            if intent_confidence >= CONFIDENCE_INDEX:
-                if intent_value == 'time':
-                    print('time')
-                    get_time()
-                elif intent_value == 'weather':
-                    print('weather')
-                    get_weather()
-                elif intent_value == 'news':
-                    print('news')
-                    get_news()
-                elif intent_value == 'music':
-                    print('music')
-                    music_player()
-            else:
-                unsure_resp()
-        elif "greetings" in task_dict:
-            print('greet')
-            if task_dict['greetings'][0]['confidence'] >= CONFIDENCE_INDEX:
-                greet_fn()
-        elif "wikipedia_search_query" in task_dict:
-            print('wikipedia_search_query')
-            if task_dict['wikipedia_search_query'][0]['confidence'] >= CONFIDENCE_INDEX:
-                search_fn()
-    except:
-        unsure_resp()
             
             
 
