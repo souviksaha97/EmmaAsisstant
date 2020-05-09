@@ -32,13 +32,15 @@ Emma is a personal Assistant who loves to help! She can tell you the weather, th
 ## 24/04/2020  
 * Cleared youtube-dl cache before each run  
 
+## 09/05/2020
+* Solved wikipedia search and weather issues  
+
 ---
 
 ## List of changes to do  
 * Using pandas, for handling JSON  
 * Max, min temperature  
 * Different kinds of news reporting  
-* Integrate OLED screen with Assistant  
 
 ---
 
